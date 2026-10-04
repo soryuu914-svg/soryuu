@@ -27,9 +27,11 @@ test('provider candidate envelope is accepted without bypassing count and eviden
 });
 
 test('ambiguous envelopes are rejected and independent review objects retain their schema',async t=>{
- const {service}=await fixture(t,[{candidates:[candidate()],status:'pass'}, {candidates:[candidate('他站起来。')]},{status:'pass',issues:[]}]);
+ const {service,calls}=await fixture(t,[{candidates:[candidate()],status:'pass'}, {candidates:[candidate('他站起来。')]},{status:'pass',issues:[]}]);
  await assert.rejects(service.generate({requestId:'ambiguous',operation:'test',values:{},context:{}}),/数量/);
  const result=await service.generate({requestId:'wrapped-prose',operation:'full',values:{},context:{}});assert.equal(result[0].semanticReview.status,'pass');
+ assert.match(calls[1].body.messages[0].content,/summary必须是完整小说正文/);
+ assert.match(calls[1].body.messages[0].content,/输出结构必须是\[\{/);
 });
 
 test('single-candidate envelope may carry task evidence beside its candidate',async t=>{

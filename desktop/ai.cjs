@@ -218,7 +218,8 @@ function createAIService({getConfig,record=()=>{}}={}) {
     const timer=setTimeout(()=>{timeout=true;controller.abort();},config.timeoutMs);
     try {
       const count=countFor(request.operation,request.values,request.context),data=ground(request.operation,request.values,request.context);
-      const messages=[{role:'system',content:SYSTEM+'\n任务：'+DIRECTIONS[request.operation]+(count===null?'\n只返回确实重复的分组，可返回空数组。':'\n必须返回 '+count+' 个候选。')},{role:'user',content:JSON.stringify({operation:request.operation,...data})}];
+      const proseContract=PROSE.has(request.operation)?'\n输出结构必须是[{"title":"章节标题","summary":"完整小说正文","fields":[]}]。summary必须是完整小说正文，不是剧情摘要。不要将正文放进fields，也不要输出单独对象或外层candidate。':'';
+      const messages=[{role:'system',content:SYSTEM+'\n任务：'+DIRECTIONS[request.operation]+proseContract+(count===null?'\n只返回确实重复的分组，可返回空数组。':'\n必须返回 '+count+' 个候选。')},{role:'user',content:JSON.stringify({operation:request.operation,...data})}];
       if(request.reviewOnly===true&&!PROSE.has(request.operation))fail('只有正文候选支持重新核对。');
       const rawCandidates=request.reviewOnly===true?request.context.candidates:await chat(config,controller,messages,request.requestId,'generate');
       let candidates;
