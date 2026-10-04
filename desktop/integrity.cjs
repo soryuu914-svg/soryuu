@@ -1,0 +1,3 @@
+const fs=require('node:fs'),path=require('node:path'),crypto=require('node:crypto');
+function verifyIntegrity(directory){const file=path.join(directory,'integrity.json');if(!fs.existsSync(path.join(directory,'runtime.json')))return; if(!fs.existsSync(file))throw new Error('保护文件清单缺失');const manifest=JSON.parse(fs.readFileSync(file,'utf8'));if(manifest.version!==1)throw new Error('保护文件版本异常');for(const [name,hash] of Object.entries(manifest.files)){const full=path.resolve(directory,name);if(!full.startsWith(path.resolve(directory)+path.sep)||!fs.existsSync(full)||crypto.createHash('sha256').update(fs.readFileSync(full)).digest('hex')!==hash)throw new Error('程序文件完整性检查失败');}}
+module.exports={verifyIntegrity};

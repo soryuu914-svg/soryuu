@@ -1,0 +1,5 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');const env={window:{}};vm.createContext(env);vm.runInContext(fs.readFileSync(__dirname+'/preview-quality.js','utf8'),env);const q=env.window.previewQualityModel;
+const items=[{id:'general',summary:'动作表达情绪',fields:[['规则正文','避免连续情绪标签'],['例外','角色刻意重复可保留']]},{id:'urban',fields:[['适用题材','都市']]},{id:'battle',fields:[['适用场景类型','战斗']]},{id:'polish',fields:[['适用操作','polish']]},{id:'exclude',fields:[['排除场景类型','对话']]},{id:'disabled',enabled:false,fields:[]}];
+const ids=q.selectMaterials(items,{operation:'full',genre:'修仙',scene:'对话'}).map(x=>x.id);assert.equal(JSON.stringify(ids),JSON.stringify(['general']));assert.equal(q.selectMaterials(items,{operation:'full',genre:'修仙'}).some(x=>x.id==='battle'),false);assert.equal(q.selectMaterials(items,{operation:'polish',genre:'都市',scene:'战斗'}).length,5);
+const text=q.materialText(items[0]);for(const value of ['动作表达情绪','规则正文：避免连续情绪标签','例外：角色刻意重复可保留'])assert.ok(text.includes(value));assert.ok(!text.includes('undefined'));
+console.log('PASS material filtering and complete rules: 7 assertions');

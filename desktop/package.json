@@ -1,0 +1,21 @@
+{
+  "name": "writing-workbench-desktop",
+  "version": "0.2.0",
+  "private": true,
+  "description": "写作台 Electron 桌面测试版",
+  "main": "main.cjs",
+  "scripts": {
+    "build": "node build.cjs",
+    "build:protected": "node build.cjs --protect",
+    "start": "electron .",
+    "start:protected": "electron protected",
+    "test": "node --test tests/*.test.cjs",
+    "verify": "node verify.cjs",
+    "package:win": "npm run build:protected && npm run verify && node package-win.cjs"
+  },
+  "devDependencies": {
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3",
+    "javascript-obfuscator": "4.1.1"
+  }
+}

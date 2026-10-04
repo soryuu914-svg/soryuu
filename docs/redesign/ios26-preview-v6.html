@@ -1,0 +1,546 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light">
+  <title>写作台 · Liquid Glass 设计预览</title>
+  <style>
+    :root {
+      --canvas: #edf0f3; --paper: rgba(252,253,255,.83); --ink: #172d4c; --muted: #4d6381;
+      --spectrum: linear-gradient(115deg,#e3a5ba 0%,#edbc92 17%,#e5d497 32%,#9dccb6 48%,#93c7dc 64%,#a2b4df 80%,#c5a5dc 100%);
+      --spectrum-accent: linear-gradient(115deg,#954e77 0%,#916534 21%,#3d796c 47%,#37679a 72%,#75529a 100%);
+      --brand: #215ee5; --line: rgba(77,103,150,.19); --soft: #dce8ff; --success: #20785e;
+      --glass: rgba(248,251,255,.48); --glass-edge: rgba(255,255,255,.98);
+      --shadow: 0 10px 30px rgba(31,64,117,.12), inset 0 1px 0 var(--glass-edge);
+      --nav-glass: rgba(231,240,255,.44); --nav-ink: #193554; --nav-muted: #455e7f;
+      --sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Microsoft YaHei', sans-serif;
+      --serif: 'Noto Serif SC', 'Songti SC', 'SimSun', Georgia, serif;
+    }
+    * { box-sizing: border-box; scrollbar-width: thin; scrollbar-color: #a7b7ce transparent; }
+    body { margin: 0; color: var(--ink); background: var(--canvas); font: 14px/1.6 var(--sans); }
+    button,input,textarea { font: inherit; }
+    button { cursor: pointer; color: inherit; }
+    button:disabled { cursor: default; opacity: .5; }
+    button:focus-visible,input:focus-visible,textarea:focus-visible,summary:focus-visible { outline: 3px solid var(--brand); outline-offset: 3px; }
+    button { transition: background .16s, box-shadow .16s, transform .16s; }
+    button:active:not(:disabled) { transform: translateY(1px); }
+    ::-webkit-scrollbar { width: 7px; height: 7px; }
+    ::-webkit-scrollbar-thumb { background: #a7b7ce; border-radius: 10px; }
+    h1,h2,h3,p { margin: 0; }
+    svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+    [hidden] { display: none !important; }
+    .review { backdrop-filter: blur(18px); display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 12px; padding: 14px 24px; border-bottom: 1px solid var(--line); background: var(--paper); }
+    .review-label { display: flex; gap: 12px; align-items: center; }
+    .review-label strong { font-size: 14px; letter-spacing: .01em; }
+    .review-label span { color: var(--muted); font-size: 12px; }
+    .review-label a { color: var(--brand); font-size: 12px; text-decoration: none; }
+    .review-label a:hover { text-decoration: underline; }
+    .segmented { display: inline-flex; gap: 3px; padding: 4px; border-radius: 30px; background: #edf1f7; }
+    .segmented button { border: 0; background: transparent; padding: 7px 17px; border-radius: 24px; font-size: 12px; white-space: nowrap; }
+    .segmented button[aria-pressed="true"] { background: var(--paper); box-shadow: 0 2px 6px rgba(34,62,105,.12); color: var(--brand); font-weight: 600; }
+    .setting { display: inline-flex; align-items: center; gap: 7px; font-size: 12px; color: var(--muted); cursor: pointer; }
+    .setting input { accent-color: var(--brand); }
+    .stage { min-height: calc(100vh - 69px); display: grid; grid-template-columns: 216px minmax(0,1fr); gap: 20px; padding: 22px; background: radial-gradient(ellipse at 43% 42%,rgba(255,255,255,.46),transparent 65%),var(--spectrum); }
+    .glass { background: var(--glass); border: 1px solid var(--glass-edge); backdrop-filter: blur(22px) saturate(140%); box-shadow: var(--shadow); }
+    .sidebar { border-radius: 28px; padding: 25px 13px 15px; display: flex; flex-direction: column; min-height: 740px; background: var(--nav-glass); color: var(--nav-ink); border: 1px solid rgba(255,255,255,.75); box-shadow: 0 16px 38px rgba(36,66,119,.13), inset 0 1px 0 rgba(255,255,255,.92); background-image: linear-gradient(155deg,rgba(255,255,255,.32),rgba(231,226,255,.1) 70%); }
+    .brand { display: flex; align-items: center; gap: 10px; padding: 0 12px 27px; }
+    .brand-icon { display: grid; place-items: center; width: 38px; height: 38px; border-radius: 12px; background: var(--spectrum-accent); color: white; box-shadow: 0 4px 12px rgba(7,26,59,.3), inset 0 1px 0 rgba(255,255,255,.35); }
+    .brand-icon svg { width: 22px; height: 22px; }
+    .brand strong { font-size: 21px; letter-spacing: .07em; }
+    .brand small { display: block; font-size: 11px; letter-spacing: .04em; color: var(--nav-muted); }
+    .nav-label { padding: 0 15px; margin: 8px 0; color: var(--nav-muted); font-size: 12px; }
+    .nav-item { display: flex; gap: 12px; align-items: center; width: 100%; text-align: left; border: 0; background: transparent; padding: 11px 15px; margin: 3px 0; border-radius: 18px; color: var(--nav-muted); }
+    .nav-item:hover { background: rgba(197,220,255,.13); color: var(--nav-ink); }
+    .nav-item.active { color: #fff; background: var(--spectrum-accent); box-shadow: 0 5px 14px rgba(49,45,79,.22), inset 0 1px 0 rgba(255,255,255,.38); font-weight: 600; }
+    .nav-item.active svg { color: #fff; }
+    .nav-item small { margin-left: auto; color: var(--nav-muted); font-size: 12px; }
+    .nav-item:disabled:hover { background: transparent; }
+    .divider { border-top: 1px solid rgba(73,107,158,.17); margin: 20px 12px; }
+    .sidebar-bottom { margin-top: auto; padding-top: 40px; }
+    .workspace { display: flex; align-items: center; gap: 10px; padding: 13px 12px 0; border-top: 1px solid rgba(73,107,158,.17); margin-top: 15px; }
+    .workspace .dot { width: 7px; height: 7px; background: var(--success); border-radius: 50%; }
+    .workspace strong { display: block; font-size: 12px; font-weight: 500; }
+    .workspace small { color: var(--nav-muted); font-size: 11px; }
+    .content { min-width: 0; }
+    .topbar { display: flex; align-items: center; justify-content: space-between; min-height: 46px; gap: 15px; margin: 0 4px 30px; }
+    .breadcrumb { color: var(--muted); font-size: 12px; display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+    .breadcrumb b { color: var(--ink); font-weight: 500; }
+    .top-actions { display: flex; gap: 10px; align-items: center; }
+    .search { display: flex; gap: 9px; align-items: center; padding: 9px 13px; border-radius: 24px; min-width: 210px; }
+    .search svg { color: var(--muted); width: 16px; }
+    .search input { background: transparent; border: 0; min-width: 0; width: 125px; outline-offset: 4px; color: var(--ink); font-size: 12px; }
+    .search input::placeholder { color: var(--muted); }
+    .clear { border: 0; background: transparent; padding: 0 3px; font-size: 18px; line-height: 1; }
+    kbd { font: 10px var(--sans); color: var(--muted); background: #edf1f8; border: 1px solid var(--line); border-radius: 5px; padding: 3px 5px; }
+    .avatar { border: 1px solid var(--glass-edge); background: var(--glass); width: 39px; height: 39px; border-radius: 50%; display: grid; place-items: center; font-size: 12px; font-weight: 600; }
+    .page-heading { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; margin: 0 4px 26px; }
+    h1 { font-size: 29px; line-height: 1.35; font-weight: 650; letter-spacing: -.035em; }
+    .subtitle { color: var(--muted); font-size: 13px; margin-top: 8px; }
+    .actions { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; }
+    .btn { display: inline-flex; justify-content: center; align-items: center; gap: 7px; padding: 10px 18px; border-radius: 23px; border: 1px solid var(--glass-edge); background: var(--glass); box-shadow: var(--shadow); font-size: 12px; font-weight: 500; white-space: nowrap; }
+    .btn:hover { background: var(--paper); box-shadow: 0 6px 18px rgba(34,62,105,.12); }
+    .btn.primary { background: var(--brand); color: white; border-color: var(--brand); box-shadow: 0 5px 12px rgba(40,96,216,.19), inset 0 1px 0 rgba(255,255,255,.22); }
+    .btn.primary:hover { background: #2355bf; }
+    .btn svg { width: 16px; height: 16px; }
+    .continue { display: grid; grid-template-columns: minmax(0,1fr) 255px; gap: 25px; background: linear-gradient(120deg,rgba(255,255,255,.72),rgba(238,241,255,.52)); backdrop-filter: blur(18px); border: 1px solid rgba(255,255,255,.88); border-top: 1px solid rgba(255,255,255,.95); border-radius: 23px; padding: 28px 30px 30px; margin-bottom: 34px; box-shadow: 0 9px 22px rgba(31,64,117,.06); }
+    .eyebrow { font-size: 11px; letter-spacing: .025em; color: var(--muted); margin-bottom: 15px; display: flex; align-items: center; gap: 7px; }
+    .eyebrow svg { width: 14px; height: 14px; }
+    .continue h2 { font-size: 24px; font-weight: 600; margin-bottom: 7px; }
+    .continue p { color: var(--muted); font-size: 12px; }
+    .continue .actions { margin-top: 25px; }
+    .text-btn { border: 0; padding: 10px 8px; color: var(--muted); background: transparent; font-size: 12px; }
+    .text-btn:hover { color: var(--brand); }
+    .manuscript-snippet { border-left: 1px solid var(--line); padding-left: 26px; display: flex; flex-direction: column; justify-content: center; }
+    .manuscript-snippet h3 { font-size: 12px; font-weight: 500; margin-bottom: 13px; }
+    .manuscript-snippet p { font: 13px/2 var(--serif); color: #566680; }
+    .manuscript-snippet small { font-size: 10px; color: var(--muted); margin-top: 16px; }
+    .section-head { display: flex; justify-content: space-between; gap: 15px; align-items: center; margin: 0 4px 18px; }
+    .section-head h2 { font-size: 16px; font-weight: 600; }
+    .section-head span { color: var(--muted); font-size: 12px; font-weight: 400; margin-left: 9px; }
+    .section-head .text-btn { padding: 5px; }
+    .book-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 17px; }
+    .book-card { backdrop-filter: blur(18px); text-align: left; display: block; width: 100%; padding: 24px; background: var(--paper); border: 1px solid var(--line); border-radius: 21px; box-shadow: 0 6px 18px rgba(31,64,117,.045); }
+    .book-card:hover { border-color: #aabfe6; box-shadow: 0 8px 22px rgba(34,62,105,.06); }
+    .book-card-top { display: flex; gap: 17px; align-items: flex-start; margin-bottom: 22px; }
+    .cover { width: 68px; height: 96px; flex-shrink: 0; border-radius: 3px 8px 8px 3px; background: var(--ink); color: white; padding: 10px 10px 10px 13px; position: relative; box-shadow: 3px 4px 7px rgba(32,51,79,.16); }
+    .cover::before { content: ''; position: absolute; left: 5px; top: 0; bottom: 0; border-left: 1px solid rgba(255,255,255,.17); }
+    .cover span { font: 13px/1.5 var(--serif); letter-spacing: .13em; display: block; }
+    .cover small { position: absolute; bottom: 10px; left: 14px; font-size: 7px; opacity: .7; letter-spacing: .04em; }
+    .cover.blue { background: #466386; }
+    .cover.gray { background: #657886; }
+    .book-info { padding-top: 3px; min-width: 0; }
+    .book-info h3 { font-size: 15px; line-height: 1.7; font-weight: 600; overflow-wrap: anywhere; }
+    .tag { display: inline-block; padding: 2px 8px; border-radius: 7px; color: #2d548c; background: var(--soft); font-size: 12px; margin-top: 10px; }
+    .book-card > p { font-size: 12px; color: var(--muted); margin-bottom: 24px; min-height: 38px; }
+    .book-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding-top: 14px; border-top: 1px solid var(--line); font-size: 12px; color: var(--muted); flex-wrap: wrap; }
+    .book-meta strong { color: var(--ink); font-weight: 600; }
+    .empty { text-align: center; padding: 45px; border: 1px dashed var(--line); border-radius: 20px; background: var(--paper); }
+    .empty h3 { font-size: 17px; margin-bottom: 8px; }
+    .empty p { color: var(--muted); margin-bottom: 16px; }
+    .home-bottom { margin: 30px 4px 0; padding-top: 22px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 15px; flex-wrap: wrap; font-size: 11px; color: var(--muted); }
+    .home-bottom span { display: flex; align-items: center; gap: 7px; }
+    .home-bottom svg { width: 14px; height: 14px; }
+    .character-layout { display: grid; grid-template-columns: minmax(0,1fr) 270px; gap: 20px; }
+    .character-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 17px; }
+    .person-card { backdrop-filter: blur(18px); border: 1px solid var(--line); border-radius: 22px; background: var(--paper); text-align: left; padding: 24px; }
+    .person-card:hover { border-color: #aabfe6; }
+    .person-card[aria-pressed="true"] { border-color: #87a7de; box-shadow: 0 0 0 2px rgba(40,96,216,.08); }
+    .person-head { display: flex; align-items: center; gap: 15px; margin-bottom: 19px; }
+    .person-avatar { display: grid; place-items: center; width: 49px; height: 49px; border-radius: 17px; background: #e8eff9; font: 22px var(--serif); color: #42618e; }
+    .person-head h2 { font-size: 17px; font-weight: 600; }
+    .person-head .tag { margin-top: 4px; }
+    .person-card p { font-size: 12px; color: var(--muted); line-height: 1.9; margin-bottom: 20px; }
+    .person-card small { color: var(--muted); font-size: 10px; }
+    .person-detail { backdrop-filter: blur(18px); border: 1px solid var(--line); border-radius: 23px; background: var(--paper); padding: 24px; }
+    .person-detail > .person-avatar { width: 65px; height: 65px; font-size: 28px; margin-bottom: 17px; }
+    .person-detail h2 { font-size: 22px; margin-bottom: 4px; }
+    .person-detail dl { margin: 25px 0; }
+    .person-detail dt { font-size: 10px; color: var(--muted); margin-bottom: 5px; }
+    .person-detail dd { font-size: 12px; line-height: 1.9; margin: 0 0 18px; }
+    .person-detail .btn { width: 100%; }
+    .notice { color: var(--muted); padding: 0 26px 15px; font-size: 11px; background: var(--canvas); min-height: 33px; }
+    .notice span { color: var(--brand); }
+    .solid { --glass: #f8faff; --glass-edge: #e1e8f2; }
+    .solid .glass { backdrop-filter: none; }
+    .solid .sidebar { background: #e8eef9; background-image: none; }
+    dialog { border: 1px solid var(--glass-edge); border-radius: 28px; padding: 28px; width: min(430px,calc(100vw - 32px)); background: #fafcff; color: var(--ink); box-shadow: 0 20px 80px rgba(32,51,79,.2); }
+    dialog::backdrop { background: rgba(31,48,73,.2); backdrop-filter: blur(6px); }
+    dialog h2 { font-size: 22px; margin-bottom: 8px; }
+    dialog p { font-size: 12px; color: var(--muted); margin-bottom: 23px; }
+    dialog label { display: block; font-size: 12px; margin-bottom: 7px; }
+    dialog input { width: 100%; border: 1px solid #cad6e6; border-radius: 12px; padding: 11px 13px; color: var(--ink); background: white; margin-bottom: 7px; }
+    .field-error { font-size: 11px; color: #b33d46; min-height: 22px; margin-bottom: 14px; }
+    dialog .actions { justify-content: flex-end; }
+    @media (max-width: 1250px) { .stage { grid-template-columns: 190px minmax(0,1fr); gap: 15px; padding: 16px; } .continue { grid-template-columns: 1fr 220px; padding: 25px; } .book-card { padding: 20px; } .book-card-top { gap: 12px; } .character-layout { grid-template-columns: 1fr; } .person-detail { display: grid; grid-template-columns: 80px 1fr; gap: 10px; } .person-detail dl { grid-column: 1/-1; display: grid; grid-template-columns: 100px 1fr; margin: 10px 0; } .person-detail > .btn { grid-column: 1/-1; width: auto; justify-self: start; } }
+    @media (max-width: 950px) { .book-grid { grid-template-columns: repeat(2,minmax(0,1fr)); } .continue { grid-template-columns: 1fr; } .manuscript-snippet { display: none; } .page-heading { flex-wrap: wrap; } .review-label span { display: none; } .sidebar { min-height: 700px; } .topbar .search { min-width: 170px; } }
+    @media (max-width: 720px) { .review { padding: 12px 15px; gap: 10px; } .review-label { width: 100%; } .stage { display: block; padding: 13px; } .sidebar { min-height: 0; padding: 12px; margin-bottom: 18px; } .brand { padding: 0 5px 10px; } .brand strong { font-size: 18px; } .brand small,.nav-label,.sidebar-bottom,.divider,.secondary-nav { display: none; } .sidebar nav { display: flex; gap: 4px; } .nav-item { justify-content: center; padding: 10px 8px; font-size: 11px; gap: 6px; } .nav-item small { display: none; } .nav-item svg { width: 15px; } .topbar { margin-bottom: 20px; flex-wrap: wrap; } .breadcrumb { font-size: 11px; gap: 6px; } .top-actions { margin-left: auto; } .avatar { display: none; } .book-grid,.character-grid { grid-template-columns: 1fr; } .continue { padding: 22px; } .continue h2 { font-size: 21px; } .continue .actions { gap: 5px; } .btn { padding: 9px 15px; } h1 { font-size: 25px; } .review .setting { font-size: 11px; } .segmented button { padding: 7px 13px; } .notice { padding: 5px 16px 15px; } .search { width: 190px; } .search input { flex: 1; width: 100px; } .editor-heading .subtitle { max-width: 100%; } }
+    @media (prefers-reduced-motion: reduce) { *,*::before,*::after { transition: none !important; scroll-behavior: auto !important; } }
+    @media (prefers-reduced-transparency: reduce) { .glass { background: #f8faff; backdrop-filter: none; } .sidebar { background: #e8eef9; } }
+    @supports not (backdrop-filter: blur(1px)) { .glass { background: #f8faff; } .sidebar { background: #e8eef9; } }
+    @media (forced-colors: active) { .glass,.book-card,.person-card,.paper { border: 1px solid CanvasText; box-shadow: none; } .nav-item.active,.segmented button[aria-pressed="true"] { outline: 1px solid Highlight; } }
+
+    /* A single app window owns its chrome, panes, scrolling and status. */
+    .editing .topbar { margin-bottom: 16px; }
+    .writing-window { border-radius: 19px; overflow: hidden; border: 1px solid rgba(255,255,255,.93); background: linear-gradient(135deg,rgba(255,253,250,.52),rgba(255,255,255,.38) 55%,rgba(251,249,255,.52)); backdrop-filter: blur(34px) saturate(135%); box-shadow: 0 28px 70px rgba(59,51,86,.2),-8px 5px 28px rgba(191,120,104,.08),8px 7px 28px rgba(89,147,163,.08),inset 0 1px 0 white; }
+    .window-titlebar { display:flex; align-items:center; justify-content:space-between; gap:16px; padding:19px 22px 17px; background:linear-gradient(105deg,rgba(255,178,198,.2),rgba(255,210,151,.23) 20%,rgba(255,239,173,.26) 37%,rgba(166,230,201,.21) 54%,rgba(168,218,247,.23) 73%,rgba(203,179,247,.25)); border-bottom:1px solid var(--line); }
+    .document-identity { display:flex; gap:12px; align-items:center; min-width:0; }
+    .document-icon { display:grid; place-items:center; flex-shrink:0; width:37px; height:42px; border:1px solid rgba(255,255,255,.98); border-radius:9px; color:#4169ae; background:linear-gradient(145deg,rgba(255,255,255,.92),rgba(216,231,255,.64)); box-shadow:0 3px 9px rgba(61,82,140,.1),inset 0 1px 0 white; }
+    .document-icon svg { width:22px; height:22px; }
+    .document-identity h1 { font-size:17px; letter-spacing:0; line-height:1.5; font-weight:650; }
+    .document-identity p { font-size:12px; color:var(--muted); margin-top:2px; }
+    .identity-dot { margin:0 8px; }
+    .window-actions { display:flex; align-items:center; gap:5px; flex-shrink:0; }
+    .pane-toggle { display:flex; gap:6px; align-items:center; justify-content:center; border:1px solid transparent; border-radius:8px; background:transparent; padding:7px 9px; font-size:12px; white-space:nowrap; }
+    .pane-toggle svg { width:17px; height:17px; }
+    .pane-toggle[aria-expanded="true"] { background:rgba(255,255,255,.56); border-color:rgba(255,255,255,.87); box-shadow:0 2px 5px rgba(55,74,127,.06); color:#31599b; }
+    .pane-toggle:hover { background:rgba(255,255,255,.75); }
+    .focus-button { color:#385b97; }
+    .focus-button[aria-pressed="true"] { background:#e4ebff; border-color:#8aa4d7; }
+    .tool-sep { height:17px; border-left:1px solid var(--line); margin:0 5px; }
+    .window-commandbar { display:flex; justify-content:space-between; align-items:center; gap:14px; padding:8px 20px; min-height:49px; background:rgba(251,253,255,.35); border-bottom:1px solid var(--line); }
+    .document-path { display:flex; align-items:center; gap:9px; color:#365174; font-size:12px; min-width:0; }
+    .document-path > svg { width:15px; height:15px; color:#567db9; }
+    #window-chapter-name { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .draft-label { border:1px solid rgba(91,125,173,.16); border-radius:5px; padding:1px 6px; font-size:10px; color:#486487; white-space:nowrap; }
+    .format-controls,.tools { display:flex; align-items:center; gap:3px; }
+    .format-controls { gap:14px; flex-shrink:0; }
+    .format-controls small { font-size:11px; color:var(--muted); white-space:nowrap; }
+    .font-choice { border:1px solid rgba(255,255,255,.73); border-radius:6px; background:rgba(255,255,255,.43); color:#365174; padding:4px 9px; font-size:12px; }
+    .tool { display:grid; place-items:center; border:1px solid transparent; width:28px; height:28px; border-radius:6px; background:transparent; font-size:12px; }
+    .tool:hover,.font-choice:hover { background:rgba(255,255,255,.78); }
+    .tool[aria-pressed="true"] { background:#dce7ff; border-color:#a8bfe5; color:#2355ae; }
+    .editor-layout { display:grid; grid-template-columns:185px minmax(0,1fr) 210px; gap:0; align-items:stretch; height:clamp(520px,calc(100vh - 392px),900px); }
+    .chapter-list { padding:22px 11px; background:linear-gradient(170deg,rgba(255,242,211,.2),rgba(245,237,233,.1)); border:0; border-right:1px solid var(--line); border-radius:0; overflow:auto; }
+    .chapter-list h2 { font-size:12px; font-weight:600; padding:0 9px; margin-bottom:5px; }
+    .chapter-list > p { font-size:11px; color:var(--muted); padding:0 9px; margin-bottom:22px; }
+    .volume { font-size:11px; color:var(--muted); padding:0 7px 12px; }
+    .chapter { width:100%; border:1px solid transparent; border-radius:8px; background:transparent; text-align:left; font-size:12px; line-height:1.8; padding:9px 9px; margin-bottom:6px; }
+    .chapter span { display:block; color:var(--muted); font-size:11px; margin-top:3px; }
+    .chapter:hover { background:rgba(255,255,255,.45); }
+    .chapter[aria-pressed="true"] { color:#294f66; background:linear-gradient(115deg,rgba(255,242,223,.79),rgba(228,243,238,.76) 58%,rgba(233,226,251,.76)); border-color:rgba(255,255,255,.85); font-weight:600; box-shadow:0 3px 7px rgba(63,75,92,.07),inset 3px 0 0 #65887e; }
+    .editor-middle { min-width:0; overflow:auto; background:linear-gradient(140deg,rgba(255,255,255,.84),rgba(253,253,255,.76)); }
+    .writer-surface { min-height:100%; border:0; background:transparent; border-radius:0; box-shadow:none; }
+    .paper { padding:37px clamp(24px,3.5vw,58px) 45px; max-width:830px; margin:0 auto; border:0; border-radius:0; background:transparent; }
+    .chapter-eyebrow { color:#607493; font-size:11px; letter-spacing:.09em; margin-bottom:10px; }
+    .chapter-title-input { width:100%; display:block; border:0; border-bottom:1px solid rgba(104,130,167,.13); border-radius:0; background:transparent; color:var(--ink); font:650 27px/1.6 var(--sans); padding:0 0 19px; margin-bottom:25px; }
+    .chapter-input { width:100%; display:block; min-height:390px; border:0; border-radius:0; padding:0; resize:none; overflow:hidden; color:#233b59; background:transparent; font:18px/1.95 var(--sans); }
+    .chapter-input::placeholder { color:#687d96; }
+    .chapter-input:focus-visible { outline:0; }
+    .editor-middle:has(.chapter-input:focus-visible) { box-shadow:inset 0 2px 0 rgba(59,106,204,.5); }
+    .chapter-title-input:focus-visible { outline-offset:3px; }
+    .inspector { padding:22px 17px; background:rgba(246,241,255,.13); border:0; border-left:1px solid var(--line); border-radius:0; box-shadow:none; overflow:auto; }
+    .inspector-head { display:flex; align-items:center; justify-content:space-between; margin-bottom:18px; }
+    .inspector-head svg { width:16px; height:16px; color:#657fb0; }
+    .inspector h2 { font-size:12px; font-weight:600; }
+    .inspector .segmented { width:100%; border-radius:7px; padding:3px; background:rgba(126,147,195,.12); margin-bottom:23px; }
+    .inspector .segmented button { flex:1; border-radius:5px; padding:5px 7px; font-size:11px; }
+    .inspector .segmented button[aria-pressed="true"] { background:rgba(255,255,255,.8); color:#3c5e9c; }
+    .inspector h3 { font-size:12px; font-weight:600; margin-bottom:11px; }
+    .inspector p { color:var(--muted); font-size:12px; line-height:1.9; }
+    .inspector hr { border:0; border-top:1px solid var(--line); margin:24px 0; }
+    .reference { display:flex; gap:9px; align-items:center; padding:8px 0; }
+    .reference-avatar { width:31px; height:34px; border:1px solid rgba(255,255,255,.7); border-radius:8px; display:grid; place-items:center; background:linear-gradient(140deg,rgba(255,255,255,.67),rgba(213,225,253,.57)); color:#486a9e; font:13px var(--serif); }
+    .reference strong { display:block; font-size:12px; font-weight:600; }
+    .reference small { font-size:11px; color:var(--muted); }
+    .progress-row { display:flex; justify-content:space-between; gap:8px; font-size:11px; margin-bottom:9px; }
+    .progress-row span { color:var(--muted); }
+    progress { width:100%; height:4px; border:0; border-radius:5px; overflow:hidden; background:rgba(81,108,158,.12); accent-color:#6586d5; }
+    progress::-webkit-progress-bar { background:rgba(81,108,158,.12); }
+    progress::-webkit-progress-value { background:var(--spectrum-accent); border-radius:5px; }
+    .paper-footer { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; color:#536887; font-size:11px; padding:10px 20px; border-top:1px solid var(--line); background:linear-gradient(100deg,rgba(255,236,219,.25),rgba(233,248,239,.25) 45%,rgba(241,235,255,.29)); }
+    .status-main { display:flex; align-items:center; gap:9px; }
+    .paper-footer strong { color:#355272; font-weight:500; }
+    .status-dot { width:5px; height:5px; border-radius:50%; background:#748cb6; }
+    .status-separator { color:#9eabc0; }
+    .directory-closed .chapter-list,.assistant-closed .inspector { display:none; }
+    .directory-closed .editor-layout { grid-template-columns:minmax(0,1fr) 210px; }
+    .assistant-closed .editor-layout { grid-template-columns:185px minmax(0,1fr); }
+    .directory-closed.assistant-closed .editor-layout { grid-template-columns:minmax(0,1fr); }
+    .focus .sidebar { display:none; }
+    .focus.stage { grid-template-columns:minmax(0,1fr); }
+    .focus .writing-window { max-width:1080px; margin:0 auto; }
+    .focus .topbar { max-width:1080px; margin-left:auto; margin-right:auto; }
+    .solid .writing-window { backdrop-filter:none; background:#edf1f9; }
+    .solid .editor-middle { background:#fcfdff; }
+    .solid .continue,.solid .book-card,.solid .person-card,.solid .person-detail { background:#fcfdff; backdrop-filter:none; }
+    @media (max-width:1250px) and (min-width:721px) { .stage { grid-template-columns:165px minmax(0,1fr); gap:13px; } .brand { padding-left:6px; gap:7px; } .brand strong { font-size:18px; } .nav-item { padding:10px; gap:8px; } .editor-layout { grid-template-columns:158px minmax(0,1fr) 185px; } .directory-closed .editor-layout { grid-template-columns:minmax(0,1fr) 185px; } .assistant-closed .editor-layout { grid-template-columns:158px minmax(0,1fr); } .window-titlebar { padding:15px; } .document-identity h1 { font-size:15px; } .window-actions { gap:1px; } .pane-toggle { padding:6px; } .document-icon { display:none; } .format-controls { gap:5px; } .format-controls small { display:none; } .window-commandbar { padding:8px 15px; } .paper { padding:30px 25px 40px; } .inspector { padding:20px 13px; } }
+    @media (max-width:1000px) and (min-width:721px) { .editor-layout { grid-template-columns:158px minmax(0,1fr); } .directory-closed .editor-layout { grid-template-columns:minmax(0,1fr); } .inspector { grid-column:1/-1; border-left:0; border-top:1px solid var(--line); } .editor-layout:has(.inspector:not([hidden])) { height:650px; grid-template-rows:minmax(0,1fr) 200px; } .assistant-closed .editor-layout { height:clamp(520px,calc(100vh - 392px),900px); grid-template-rows:minmax(0,1fr); } .window-commandbar { flex-wrap:wrap; gap:6px; } .window-titlebar { flex-wrap:wrap; gap:9px; } .window-actions { margin-left:auto; } }
+    @media (max-width:720px) { .stage { padding:10px; } .sidebar { border-radius:16px; margin-bottom:14px; } .writing-window { border-radius:14px; } .window-titlebar { padding:15px 13px 11px; flex-wrap:wrap; gap:11px; } .document-identity h1 { font-size:15px; } .document-identity p { font-size:11px; } .document-icon { width:29px; height:34px; } .window-actions { width:100%; justify-content:flex-end; } .window-commandbar { padding:9px 13px; flex-wrap:wrap; gap:9px; } .document-path { width:100%; } .format-controls { justify-content:space-between; width:100%; gap:5px; } .format-controls small { font-size:10px; } .editor-layout,.directory-closed .editor-layout,.assistant-closed .editor-layout,.directory-closed.assistant-closed .editor-layout { display:flex; flex-direction:column; height:auto; } .chapter-list { border-right:0; border-bottom:1px solid var(--line); padding:11px; } .chapter-list h2,.chapter-list > p,.volume { display:none; } .chapter-items { display:flex; gap:5px; overflow-x:auto; } .chapter { min-width:138px; margin:0; } .editor-middle { max-height:65vh; min-height:420px; } .paper { padding:26px 21px 35px; } .chapter-title-input { font-size:24px; } .inspector { border-left:0; border-top:1px solid var(--line); padding:18px; } .paper-footer { padding:10px 13px; font-size:10px; } .identity-dot { margin:0 5px; } }
+    @media (prefers-reduced-transparency:reduce) { .writing-window { backdrop-filter:none; background:#edf1f9; } .editor-middle { background:#fcfdff; } }
+    @supports not (backdrop-filter:blur(1px)) { .writing-window { background:#edf1f9; } .editor-middle { background:#fcfdff; } }
+    @media (forced-colors:active) { .writing-window,.window-titlebar,.window-commandbar,.chapter-list,.inspector,.paper-footer,.pane-toggle { border:1px solid CanvasText; box-shadow:none; } .chapter[aria-pressed="true"],.pane-toggle[aria-expanded="true"] { outline:1px solid Highlight; } }
+  </style>
+  <link rel="stylesheet" href="preview-pages.css">
+</head>
+<body>
+  <svg hidden aria-hidden="true"><defs>
+    <symbol id="i-pen" viewBox="0 0 24 24"><path d="m4 20 4-1 12-12-3-3L5 16l-1 4Z"/><path d="m14 7 3 3M13 20h7"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M3 4h7l2 2 2-2h7v15h-7l-2 2-2-2H3V4Z"/><path d="M12 6v15M6 8h3M15 8h3"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="2"/><rect x="14" y="3" width="7" height="7" rx="2"/><rect x="3" y="14" width="7" height="7" rx="2"/><rect x="14" y="14" width="7" height="7" rx="2"/></symbol>
+    <symbol id="i-users" viewBox="0 0 24 24"><circle cx="9" cy="8" r="3"/><path d="M3 20v-2a6 6 0 0 1 12 0v2M17 5a3 3 0 0 1 0 6M21 20v-2a6 6 0 0 0-3-5"/></symbol>
+    <symbol id="i-world" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><ellipse cx="12" cy="12" rx="4" ry="9"/><path d="M3 12h18"/></symbol>
+    <symbol id="i-list" viewBox="0 0 24 24"><path d="M8 5h13M8 12h13M8 19h13M3 5h1M3 12h1M3 19h1"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="10.5" cy="10.5" r="7"/><path d="m16 16 5 5"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M4 12h16m-6-6 6 6-6 6"/></symbol>
+    <symbol id="i-upload" viewBox="0 0 24 24"><path d="M12 16V3m-5 5 5-5 5 5M4 15v6h16v-6"/></symbol>
+    <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h16"/><circle cx="8" cy="6" r="2" fill="currentColor" stroke="none"/><circle cx="16" cy="12" r="2" fill="currentColor" stroke="none"/><circle cx="10" cy="18" r="2" fill="currentColor" stroke="none"/></symbol>
+    <symbol id="i-light" viewBox="0 0 24 24"><path d="M9 18h6M9 21h6M8 14a7 7 0 1 1 8 0l-1 2H9l-1-2Z"/></symbol>
+    <symbol id="i-shield" viewBox="0 0 24 24"><path d="m12 3 8 3v6c0 5-8 9-8 9S4 17 4 12V6l8-3Z"/><path d="m8 12 3 3 5-6"/></symbol>
+    <symbol id="i-focus" viewBox="0 0 24 24"><path d="M8 3H3v5M16 3h5v5M21 16v5h-5M8 21H3v-5"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+  </defs></svg>
+  <div class="review">
+    <div class="review-label"><strong>写作台 · 完整预览</strong><span>彩虹玻璃 / 8 个页面</span><a href="ios26-preview-v4.html">对比上一版 ↗</a></div>
+    <div class="segmented" aria-label="预览页面">
+      <button type="button" data-view="home" aria-pressed="true">作品首页</button>
+      <button type="button" data-view="editor" aria-pressed="false">正文编辑</button>
+      <button type="button" data-view="characters" aria-pressed="false">人物卡</button>
+    </div>
+    <label class="setting"><input id="reduce-glass" type="checkbox">减少透明效果</label>
+  </div>
+  <div class="stage" id="stage">
+    <aside class="sidebar glass" aria-label="创作导航">
+      <div class="brand"><span class="brand-icon"><svg aria-hidden="true"><use href="#i-pen"/></svg></span><div><strong>写作台</strong><small>你的故事，由此展开</small></div></div>
+      <div class="nav-label">创作空间</div>
+      <nav>
+        <button type="button" class="nav-item active" data-nav="home"><svg aria-hidden="true"><use href="#i-grid"/></svg>我的作品<small>3</small></button>
+        <button type="button" class="nav-item" data-nav="editor"><svg aria-hidden="true"><use href="#i-pen"/></svg>正文编辑</button>
+        <button type="button" class="nav-item" data-nav="characters"><svg aria-hidden="true"><use href="#i-users"/></svg>人物卡</button>
+      </nav>
+<details class="mobile-menu"><summary>更多页面</summary><div><button type="button" class="nav-item" data-nav="world">世界观</button><button type="button" class="nav-item" data-nav="outline">大纲与伏笔</button><button type="button" class="nav-item" data-nav="library">书库与资料</button><button type="button" class="nav-item" data-nav="ideas">灵感与练习</button><button type="button" class="nav-item" data-nav="settings">设置与备份</button></div></details>
+      <div class="secondary-nav">
+        <div class="divider"></div><div class="nav-label">构建故事</div>
+        <button type="button" class="nav-item" data-nav="world"><svg aria-hidden="true"><use href="#i-world"/></svg>世界观</button>
+        <button type="button" class="nav-item" data-nav="outline"><svg aria-hidden="true"><use href="#i-list"/></svg>大纲与伏笔</button>
+        <div class="divider"></div><div class="nav-label">素材与工具</div>
+        <button type="button" class="nav-item" data-nav="library"><svg aria-hidden="true"><use href="#i-book"/></svg>书库与资料</button>
+        <button type="button" class="nav-item" data-nav="ideas"><svg aria-hidden="true"><use href="#i-light"/></svg>灵感与练习</button>
+      </div>
+      <div class="sidebar-bottom">
+        <button type="button" class="nav-item" data-nav="settings"><svg aria-hidden="true"><use href="#i-settings"/></svg>设置与备份</button>
+        <div class="workspace"><span class="dot"></span><div><strong>本地创作空间</strong><small>设计预览 · 未连接作品数据</small></div></div>
+      </div>
+    </aside>
+    <main class="content">
+      <div class="topbar">
+        <div class="breadcrumb" id="breadcrumb">创作空间 <span>›</span> <b>我的作品</b></div>
+        <div class="top-actions"><label class="search glass"><svg aria-hidden="true"><use href="#i-search"/></svg><input id="search" type="search" aria-label="筛选示例作品" placeholder="搜索作品…"><button class="clear" type="button" id="clear-search" aria-label="清除搜索" hidden>×</button><kbd>Ctrl K</kbd></label><div class="avatar" aria-label="作者">作</div></div>
+      </div>
+      <section id="home-view" aria-label="作品首页">
+        <div class="page-heading"><div><h1>我的作品</h1><p class="subtitle">把想法写成故事，让每一次落笔都有方向。</p></div><div class="actions"><button type="button" class="btn" id="import-demo"><svg aria-hidden="true"><use href="#i-upload"/></svg>导入稿件</button><button type="button" class="btn primary" id="new-book"><svg aria-hidden="true"><use href="#i-plus"/></svg>新建作品</button></div></div>
+        <div class="continue">
+          <div><div class="eyebrow"><svg aria-hidden="true"><use href="#i-clock"/></svg>最近编辑</div><h2 data-primary-book-title>修仙世界：从凡人到仙帝</h2><p>第一卷 · 第三章「山门之外」　·　2,146 字</p><div class="actions"><button type="button" class="btn primary" data-view="editor">继续写作<svg aria-hidden="true"><use href="#i-arrow"/></svg></button><button type="button" class="text-btn" id="edit-current-book">编辑作品信息</button><button type="button" class="text-btn" data-view="characters">查看人物设定 ›</button></div></div>
+          <div class="manuscript-snippet"><h3>第三章　山门之外</h3><p>山路在薄雾中折向远处。<br>林逸停下脚步，回望来时的方向。<br>这一次，他没有再回头。</p><small>正文片段 · 示例</small></div>
+        </div>
+        <div class="section-head"><h2>全部作品<span id="book-count">3 部</span></h2><span>按最近编辑排序</span></div>
+        <div class="book-grid" id="book-grid"></div>
+        <div class="empty" id="search-empty" hidden><h3>没有找到这部作品</h3><p>换个关键词，或清除搜索查看全部作品。</p><button type="button" class="btn" id="empty-clear">清除搜索</button></div>
+        <div class="home-bottom"><span><svg aria-hidden="true"><use href="#i-shield"/></svg>本地写作，专注于你的故事</span><span>示例内容 · 不读取、不修改真实稿件</span></div>
+      </section>
+      <section id="editor-view" aria-label="正文编辑" hidden>
+        <div class="writing-window" id="writing-window">
+          <header class="window-titlebar">
+            <div class="document-identity"><span class="document-icon"><svg aria-hidden="true"><use href="#i-book"/></svg></span><div><h1 data-primary-book-title>修仙世界：从凡人到仙帝</h1><p>第一卷 · 初入仙途<span class="identity-dot">·</span>写作工作区</p></div></div>
+            <div class="window-actions"><button type="button" class="pane-toggle" id="toggle-directory" aria-expanded="true" aria-controls="directory-pane"><svg aria-hidden="true"><use href="#i-list"/></svg><span>目录</span></button><button type="button" class="pane-toggle" id="toggle-assistant" aria-expanded="true" aria-controls="assistant-pane"><svg aria-hidden="true"><use href="#i-light"/></svg><span>辅助</span></button><span class="tool-sep"></span><button type="button" class="pane-toggle focus-button" id="focus-mode" aria-pressed="false"><svg aria-hidden="true"><use href="#i-focus"/></svg><span>专注写作</span></button></div>
+          </header>
+          <div class="window-commandbar"><div class="document-path"><svg aria-hidden="true"><use href="#i-pen"/></svg><span id="window-chapter-name">第三章 · 山门之外</span><span class="draft-label">示例稿</span></div><div class="format-controls"><div class="tools"><button type="button" class="font-choice" id="font-family" aria-label="切换正文为宋体">黑体正文 ⇄</button><span class="tool-sep"></span><button type="button" class="tool" id="font-size" aria-label="调整正文大小">Aa</button><button type="button" class="tool" id="bold-demo" aria-label="预览正文加粗" aria-pressed="false"><b>B</b></button><button type="button" class="tool" id="italic-demo" aria-label="预览正文倾斜" aria-pressed="false"><i>I</i></button></div><small id="reading-size">18 px · 1.95 行距</small></div></div>
+          <div class="editor-layout">
+            <aside class="chapter-list" id="directory-pane" aria-label="章节目录"><h2>章节目录</h2><p>第一卷 · 初入仙途</p><div class="volume">⌄　第一卷　初入仙途</div><div class="chapter-items"><button type="button" class="chapter" data-chapter="1" aria-pressed="false">第一章　小村少年<span>已完成 · 2,318 字</span></button><button type="button" class="chapter" data-chapter="2" aria-pressed="false">第二章　远行<span>已完成 · 2,562 字</span></button><button type="button" class="chapter" data-chapter="3" aria-pressed="true">第三章　山门之外<span>草稿 · 2,146 字</span></button><button type="button" class="chapter" data-chapter="4" aria-pressed="false">第四章　试炼<span>待写 · 0 字</span></button></div></aside>
+            <div class="editor-middle"><div class="writer-surface"><article class="paper" id="paper"><div class="chapter-eyebrow" id="chapter-eyebrow">第一卷　/　第三章</div><input class="chapter-title-input" id="chapter-title" aria-label="示例章节标题" placeholder="输入章节标题" value="山门之外" autocomplete="off"><textarea class="chapter-input" id="chapter-input" aria-label="示例正文" aria-describedby="preview-edit-state" spellcheck="false" placeholder="从第一句话开始，把这一章写下去。">山路在薄雾中折向远处。林逸停下脚步，回望来时的方向。青石阶上积了一层水汽，他的布鞋早已湿透。
+
+临行前，母亲替他缝好的包袱里，除了两件旧衣裳，还有一块用油纸裹着的糖。她没有说什么，只把绳结系了又系。
+
+“到了山上，记得给家里捎封信。”
+
+他点了点头。那时还以为，山不过是一道更高的门槛，只要跨过去，就能看见新的天地。
+
+直到此刻，他站在山门下，才明白有些路，一旦踏上，就再也无法按原来的脚步返回。
+
+风从石阶尽头吹来，带着松针的清香。林逸握紧包袱，向上迈出了第一步。</textarea></article></div></div>
+            <aside class="inspector" id="assistant-pane" aria-label="写作辅助"><div class="inspector-head"><h2>写作辅助</h2><svg aria-hidden="true"><use href="#i-light"/></svg></div><div class="segmented" aria-label="辅助面板"><button type="button" data-inspector="reference" aria-pressed="true">参考</button><button type="button" data-inspector="outline" aria-pressed="false">细纲</button><button type="button" data-inspector="ai" aria-pressed="false">AI</button></div><section id="reference-panel"><h3>本章人物</h3><div class="reference"><div class="reference-avatar">林</div><div><strong>林逸</strong><small>主角 · 坚韧，谨慎</small></div></div><div class="reference"><div class="reference-avatar">苏</div><div><strong>苏浅语</strong><small>青梅竹马 · 天才修士</small></div></div><hr><h3>本章提醒</h3><p>母亲留下的糖，可以成为日后回望故乡时的情感线索。</p></section><section id="outline-panel" hidden><h3>本章细纲</h3><p>林逸抵达山门，对修行世界的想象第一次与现实相撞。以母亲留下的糖建立情感锚点，结尾迈上石阶，引出入门试炼。</p></section><section id="ai-panel" hidden><h3>AI 写作助手</h3><p>先由你决定故事往哪里走，再让 AI 帮你细化。本预览不发送正文，也不调用 AI 服务。</p></section><section><hr><h3>示例章节目标</h3><div class="progress-row"><strong id="goal-current">0 字</strong><span>目标 3,000 字</span></div><progress id="goal-progress" value="0" max="3000" aria-label="章节字数进度"></progress></section></aside>
+          </div>
+          <div class="paper-footer"><span class="status-main"><span class="status-dot" aria-hidden="true"></span><strong id="preview-word-count">0 字</strong><span class="status-separator">/</span><span>纯文本试写</span></span><span id="preview-edit-state">可直接试写 · 不保存到真实作品</span></div>
+        </div>
+      </section>
+
+      <section id="characters-view" aria-label="人物卡" hidden>
+        <div class="page-heading"><div><h1>人物卡</h1><p class="subtitle"><span data-primary-book-title>修仙世界：从凡人到仙帝</span> · 从姓名找到人物，从选择读懂人物。</p></div><button type="button" class="btn primary"  id="new-person"><svg aria-hidden="true"><use href="#i-plus"/></svg>新建人物</button></div>
+        <div class="module-window">
+          <div class="module-toolbar"><div class="segmented" aria-label="人物身份筛选"><button type="button" data-person-role="全部" aria-pressed="true">全部</button><button type="button" data-person-role="主角" aria-pressed="false">主角</button><button type="button" data-person-role="配角" aria-pressed="false">配角</button><button type="button" data-person-role="反派" aria-pressed="false">反派</button></div><label for="people-sort">排序<select id="people-sort"><option value="default">默认顺序</option><option value="name">姓名顺序</option></select></label></div>
+          <div class="people-layout"><div class="people-browser"><div class="list-caption"><span id="people-result">姓名 / 身份 / 设定摘要</span><span id="people-count" role="status" aria-live="polite">24 位人物 · 示例</span></div><div class="people-list" id="people-list" aria-label="人物列表"></div><div class="list-empty" id="people-empty" hidden><h3>没有找到人物</h3><p>换个关键词，或清除搜索与身份筛选。</p><button type="button" class="btn" id="people-reset">清除搜索与筛选</button></div><div class="pager"><span id="people-range">1–8 / 24 位</span><nav class="pager-actions" id="people-pagination" aria-label="人物分页"></nav></div></div>
+          <aside class="profile-panel" id="profile-panel" aria-label="人物详情"><div class="profile-top"><div class="person-initial" id="detail-avatar">林</div><div><h2 id="detail-name">林逸</h2><span class="tag" id="detail-role">主角</span></div></div><p class="profile-description" id="detail-summary"></p><dl id="person-fields"></dl><button type="button" class="btn" id="edit-person"><svg aria-hidden="true"><use href="#i-pen"/></svg>修改示例姓名</button></aside></div>
+          <div class="module-footer">每页 8 位，支持搜索与身份筛选。此处 24 位人物用于检验长列表布局，新增与改名仅在本页保留。</div>
+        </div>
+      </section>
+
+      <section id="world-view" aria-label="世界观" hidden>
+        <div class="page-heading"><div><h1>世界观</h1><p class="subtitle">先写决定故事的规则，再补充属于这个世界的细节。</p></div><button type="button" class="btn primary" data-new-record="world" id="new-world"><svg aria-hidden="true"><use href="#i-plus"/></svg>新建设定</button></div>
+        <div class="module-window"><div class="module-toolbar"><div class="segmented" aria-label="世界观分类"><button type="button" data-collection-tab="world" data-group="地理" aria-pressed="true">地理</button><button type="button" data-collection-tab="world" data-group="势力" aria-pressed="false">势力</button><button type="button" data-collection-tab="world" data-group="修行" aria-pressed="false">修行</button><button type="button" data-collection-tab="world" data-group="物品" aria-pressed="false">物品</button></div><span class="result-label" id="world-count" role="status" aria-live="polite"></span></div>
+          <div id="world-catalog" class="collection-layout"><div><div id="world-list" class="record-list" aria-label="世界观条目"></div><div id="world-empty" class="list-empty" hidden><h3>没有找到条目</h3><p>换个关键词，或切换分类查看。</p><button type="button" class="btn" data-reset-record="world">清除搜索</button></div></div><aside id="world-detail" class="record-detail" aria-label="世界观详情"><span class="detail-kicker" id="world-detail-kind"></span><h2 id="world-detail-title"></h2><p id="world-detail-summary"></p><dl id="world-detail-fields"></dl><button type="button" class="btn" data-edit-record="world">修改示例名称</button></aside></div>
+          <div class="module-footer">示例内容 · 分类、搜索与详情可操作；本页修改刷新后恢复，不连接真实作品。</div>
+        </div>
+      </section>
+
+      <section id="outline-view" aria-label="大纲与伏笔" hidden>
+        <div class="page-heading"><div><h1>大纲与伏笔</h1><p class="subtitle">让故事的走向清楚，让埋下的线索都有去处。</p></div><button type="button" class="btn primary" data-new-record="outline" id="new-outline"><svg aria-hidden="true"><use href="#i-plus"/></svg>新建条目</button></div>
+        <div class="module-window"><div class="module-toolbar"><div class="segmented" aria-label="大纲与伏笔分类"><button type="button" data-collection-tab="outline" data-group="大纲" aria-pressed="true">大纲</button><button type="button" data-collection-tab="outline" data-group="伏笔" aria-pressed="false">伏笔</button></div><span class="result-label" id="outline-count" role="status" aria-live="polite"></span></div>
+          <div id="outline-catalog" class="collection-layout"><div><div id="outline-list" class="record-list" aria-label="大纲与伏笔条目"></div><div id="outline-empty" class="list-empty" hidden><h3>没有找到条目</h3><p>换个关键词，或切换分类查看。</p><button type="button" class="btn" data-reset-record="outline">清除搜索</button></div></div><aside id="outline-detail" class="record-detail" aria-label="大纲与伏笔详情"><span class="detail-kicker" id="outline-detail-kind"></span><h2 id="outline-detail-title"></h2><p id="outline-detail-summary"></p><dl id="outline-detail-fields"></dl><button type="button" class="btn" data-edit-record="outline">修改示例名称</button></aside></div>
+          <div class="module-footer">示例内容 · 分类、搜索与详情可操作；本页修改刷新后恢复，不连接真实作品。</div>
+        </div>
+      </section>
+
+      <section id="library-view" aria-label="书库与资料" hidden>
+        <div class="page-heading"><div><h1>书库与资料</h1><p class="subtitle">把人物模板、世界规则与参考笔记放在随手可查的地方。</p></div><button type="button" class="btn primary" data-new-record="library" id="new-library"><svg aria-hidden="true"><use href="#i-plus"/></svg>新建资料</button></div>
+        <div class="module-window"><div class="module-toolbar"><div class="segmented" aria-label="书库与资料分类"><button type="button" data-collection-tab="library" data-group="人物模板" aria-pressed="true">人物模板</button><button type="button" data-collection-tab="library" data-group="世界模板" aria-pressed="false">世界模板</button><button type="button" data-collection-tab="library" data-group="参考书" aria-pressed="false">参考书</button></div><span class="result-label" id="library-count" role="status" aria-live="polite"></span></div>
+          <div id="library-catalog" class="collection-layout"><div><div id="library-list" class="record-list" aria-label="书库与资料条目"></div><div id="library-empty" class="list-empty" hidden><h3>没有找到条目</h3><p>换个关键词，或切换分类查看。</p><button type="button" class="btn" data-reset-record="library">清除搜索</button></div></div><aside id="library-detail" class="record-detail" aria-label="书库与资料详情"><span class="detail-kicker" id="library-detail-kind"></span><h2 id="library-detail-title"></h2><p id="library-detail-summary"></p><dl id="library-detail-fields"></dl><button type="button" class="btn" data-edit-record="library">修改示例名称</button></aside></div>
+          <div class="module-footer">示例内容 · 分类、搜索与详情可操作；本页修改刷新后恢复，不连接真实作品。</div>
+        </div>
+      </section>
+
+      <section id="ideas-view" aria-label="灵感与练习" hidden>
+        <div class="page-heading"><div><h1>灵感与练习</h1><p class="subtitle">记住一个想法，再用一次小练习把它写出来。</p></div><button type="button" class="btn primary" data-new-record="ideas" id="new-ideas"><svg aria-hidden="true"><use href="#i-plus"/></svg>记录灵感</button></div>
+        <div class="module-window"><div class="module-toolbar"><div class="segmented" aria-label="灵感与练习分类"><button type="button" data-collection-tab="ideas" data-group="灵感" aria-pressed="true">灵感</button><button type="button" data-collection-tab="ideas" data-group="练习" aria-pressed="false">练习</button></div><span class="result-label" id="ideas-count" role="status" aria-live="polite"></span></div>
+          <div id="ideas-catalog" class="collection-layout"><div><div id="ideas-list" class="record-list" aria-label="灵感与练习条目"></div><div id="ideas-empty" class="list-empty" hidden><h3>没有找到条目</h3><p>换个关键词，或切换分类查看。</p><button type="button" class="btn" data-reset-record="ideas">清除搜索</button></div></div><aside id="ideas-detail" class="record-detail" aria-label="灵感与练习详情"><span class="detail-kicker" id="ideas-detail-kind"></span><h2 id="ideas-detail-title"></h2><p id="ideas-detail-summary"></p><dl id="ideas-detail-fields"></dl><button type="button" class="btn" data-edit-record="ideas">修改示例名称</button></aside></div>
+          <section id="practice-panel" class="practice-panel" aria-label="写作练习" hidden><div class="practice-layout"><div class="practice-prompts" aria-label="练习题目"><button type="button" data-practice="0" aria-pressed="true">场景描写</button><button type="button" data-practice="1" aria-pressed="false">人物对话</button><button type="button" data-practice="2" aria-pressed="false">动作与选择</button></div><div class="practice-write"><label for="practice-text" id="practice-title">场景描写</label><p id="practice-description">不用“紧张”这个词，写一段少年第一次站在山门下的场景。</p><textarea id="practice-text" aria-describedby="practice-description" placeholder="写 100–300 字，专注完成这一次练习。" spellcheck="false"></textarea><div class="practice-status"><span id="practice-count">0 字</span><span>本页保留 · 切换题目保留输入，刷新后清空</span></div></div></div></section><div class="module-footer">示例内容 · 分类、搜索与详情可操作；本页修改刷新后恢复，不连接真实作品。</div>
+        </div>
+      </section>
+
+      <section id="settings-view" aria-label="设置与备份" hidden>
+        <div class="page-heading"><div><h1>设置与备份</h1><p class="subtitle">创作空间、显示偏好与服务配置，各自有清楚的位置。</p></div></div>
+        <div class="module-window"><div class="settings-layout"><nav class="settings-menu" aria-label="设置分类"><button type="button" data-settings-tab="appearance" aria-pressed="true">外观与显示</button><button type="button" data-settings-tab="workspace" aria-pressed="false">工作区</button><button type="button" data-settings-tab="ai" aria-pressed="false">AI 服务</button><button type="button" data-settings-tab="backup" aria-pressed="false">备份与恢复</button></nav>
+          <div><section class="settings-content" id="settings-appearance"><h2>外观与显示</h2><p>彩虹作为环境光色，操作控件使用清楚的浅色玻璃。</p><label class="setting-row" for="settings-glass"><span>减少透明效果<small>使用更稳定的实色表面，提升文字与控件边界的清晰度。</small></span><input id="settings-glass" type="checkbox"></label><label class="setting-row" for="preview-density"><span>人物列表间距<small>紧凑适合查找，舒适适合逐行浏览。</small></span><select id="preview-density"><option value="compact">紧凑</option><option value="spacious">舒适</option></select></label><div class="settings-hint">当前设置仅影响这份设计预览，刷新后恢复。正式版本会沿用现有偏好保存机制。</div></section>
+          <section class="settings-content" id="settings-workspace" hidden><h2>工作区</h2><p>作品保存在你选择的本地工作区，相关文件与备份使用同一入口管理。</p><div class="setting-row"><span>当前工作区<small>设计预览未连接真实工作区。</small></span><span class="person-role">未连接</span></div><div class="settings-hint">正式程序中可在这里查看工作区路径、切换工作区与打开所在文件夹。本预览不访问本地作品文件。</div></section>
+          <section class="settings-content" id="settings-ai" hidden><h2>AI 服务</h2><p>这里演示配置表单。请使用示例值，当前页面不会连接服务或保存配置。</p><form id="preview-ai-form" novalidate><label for="preview-endpoint">服务地址</label><input id="preview-endpoint" type="url" placeholder="https://api.example.com/v1" autocomplete="off"><label for="preview-secret">示例 API Key</label><input id="preview-secret" type="password" placeholder="填写示例值查看表单" autocomplete="off"><button type="button" class="btn" id="preview-secret-toggle" aria-controls="preview-secret" aria-pressed="false">显示密钥</button><label for="preview-model" style="display:block;margin-top:20px">模型名称</label><input id="preview-model" type="text" placeholder="示例模型名称" autocomplete="off"><button type="submit" class="btn primary">预览配置反馈</button></form></section>
+          <section class="settings-content" id="settings-backup" hidden><h2>备份与恢复</h2><p>备份需要关联真实工作区，完成后才能显示可靠的时间与结果。</p><div class="setting-row"><span>最近一次备份<small>当前预览没有执行备份。</small></span><span class="person-role">暂无记录</span></div><div class="settings-hint">正式流程将沿用项目现有的工作区备份机制。恢复涉及覆盖时，必须显示备份对象与影响范围，并保留明确确认。</div><button type="button" class="btn" id="preview-backup">查看备份操作说明</button></section></div>
+        </div><div class="module-footer">设计预览 · 不读取文件，不生成备份，不发送 AI 请求。</div></div>
+      </section>
+    </main>
+  </div>
+  <div class="notice" role="status" aria-live="polite" id="notice">完整设计预览 · 正文可以直接试写，切换章节保留本页输入；刷新后恢复示例，不连接真实作品。</div>
+  <dialog id="demo-dialog" aria-labelledby="dialog-title" aria-describedby="dialog-description"><form id="demo-form" novalidate><h2 id="dialog-title">新建作品</h2><p id="dialog-description">此处仅演示弹窗外观，内容不会保存到真实作品。</p><label for="demo-name" id="demo-label">作品名称</label><input id="demo-name" autocomplete="off" aria-describedby="demo-error"><div class="field-error" id="demo-error" role="alert"></div><div class="actions"><button type="button" class="btn" id="cancel-dialog">取消</button><button type="submit" class="btn primary">预览确认效果</button></div></form></dialog>
+  <dialog class="book-info-dialog" id="book-info-dialog" aria-labelledby="book-info-title" aria-describedby="book-info-description">
+    <form id="book-info-form" novalidate>
+      <h2 id="book-info-title">编辑作品信息</h2>
+      <p id="book-info-description">修改仅在本页预览中保留，刷新后恢复示例。</p>
+      <label for="book-name">书名 <span aria-hidden="true">*</span></label>
+      <input id="book-name" type="text" required maxlength="80" autocomplete="off" aria-describedby="book-name-hint book-name-error">
+      <div class="field-hint" id="book-name-hint">必填，最多 80 个字符。</div>
+      <div class="field-error" id="book-name-error" role="alert"></div>
+      <label for="book-description">作品简介</label>
+      <textarea id="book-description" maxlength="1000" aria-describedby="book-description-hint book-description-count" placeholder="写下故事的主角、起点与核心悬念。" spellcheck="false"></textarea>
+      <div class="field-hint" id="book-description-hint">选填，可以分段书写。<span id="book-description-count">0 / 1,000 个字符</span></div>
+      <div class="actions"><button type="button" class="btn" id="book-info-cancel">取消</button><button type="submit" class="btn primary" id="book-info-submit">保存修改</button></div>
+    </form>
+  </dialog>
+  <script src="preview-pages.js"></script>
+  <script src="preview-books.js"></script>
+  <script>
+    (() => {
+      const $ = (id) => document.getElementById(id);
+      const stage = $('stage');
+      let currentView = 'home';
+      let lastTrigger = null;
+      let pendingDialogAction = null;
+      let pageController = null;
+      let bookController = null;
+      const viewQueries = {};
+      const normalizeQuery = (text) => text.trim();
+      const labels = { home: '我的作品', editor: '正文编辑', characters: '人物卡', world: '世界观', outline: '大纲与伏笔', library: '书库与资料', ideas: '灵感与练习', settings: '设置与备份' };
+      const notice = (text) => { $('notice').textContent = text; };
+      const switchView = (view) => {
+        if (!labels[view]) return;
+        currentView = view;
+        stage.classList.toggle('editing', view === 'editor');
+        Object.keys(labels).forEach((key) => { $(key + '-view').hidden = key !== view; });
+        document.querySelectorAll('.review [data-view]').forEach((button) => button.setAttribute('aria-pressed', String(button.dataset.view === view)));
+        document.querySelectorAll('[data-nav]').forEach((button) => { button.classList.toggle('active',button.dataset.nav === view); if (button.dataset.nav === view) button.setAttribute('aria-current','page'); else button.removeAttribute('aria-current'); });
+        const context = ['home','library','ideas','settings'].includes(view) ? '创作空间' : (bookController?.primaryTitle() || '修仙世界：从凡人到仙帝');
+        const separator = document.createElement('span'); separator.textContent = '›';
+        const current = document.createElement('b'); current.textContent = labels[view];
+        $('breadcrumb').replaceChildren(document.createTextNode(context + ' '),separator,current);
+        $('search').value = viewQueries[view] || '';
+        const searchNames = {home:'搜索作品…',editor:'搜索章节…',characters:'搜索姓名、势力或设定…',world:'搜索世界设定…',outline:'搜索大纲与伏笔…',library:'搜索资料…',ideas:'搜索灵感…'};
+        $('search').placeholder = searchNames[view] || ''; $('search').setAttribute('aria-label',labels[view] + '搜索');
+        $('search').closest('label').hidden = view === 'settings'; $('clear-search').hidden = !$('search').value;
+        pageController?.filter(view,$('search').value);
+        if (view === 'home') filterBooks();
+        const nextUrl = new URL(location.href); nextUrl.searchParams.set('view',view); history.replaceState(null,'',nextUrl);
+        document.title = labels[view] + ' · 写作台设计预览';
+        if (view === 'editor') growEditor();
+        if (view !== 'editor') { if (stage.classList.contains('focus') && focusPaneState) { setPane('directory',focusPaneState.directory); setPane('assistant',focusPaneState.assistant); focusPaneState = null; } stage.classList.remove('focus'); $('focus-mode').setAttribute('aria-pressed','false'); $('focus-mode').querySelector('span').textContent = '专注写作'; }
+      };
+      document.querySelectorAll('[data-view],[data-nav]').forEach((button) => button.addEventListener('click',() => switchView(button.dataset.view || button.dataset.nav)));
+      document.querySelector('[data-nav="home"]').setAttribute('aria-current','page');
+      $('reduce-glass').addEventListener('change',(event) => { document.body.classList.toggle('solid',event.target.checked); notice(event.target.checked ? '已减少透明效果：工具层使用实色背景，结构与操作保持一致。' : '已恢复通透玻璃效果。渐变光色与半透明窗口已恢复。'); });
+      const filterBooks = () => {
+        const query = $('search').value.trim().toLocaleLowerCase('zh-CN');
+
+        let count = 0;
+        document.querySelectorAll('[data-book]').forEach((card) => { const match = (card.dataset.book + ' ' + card.dataset.description).toLocaleLowerCase('zh-CN').includes(query); card.hidden = !match; if (match) count++; });
+        $('search-empty').hidden = count > 0;
+        $('clear-search').hidden = query.length === 0;
+        $('book-count').textContent = count + ' 部';
+      };
+      const filterCurrentView = () => {
+        const query = normalizeQuery($('search').value); viewQueries[currentView] = query;
+        $('clear-search').hidden = !query;
+        if (currentView === 'home') filterBooks();
+        else if (currentView === 'editor') {
+          let matches = 0;
+          document.querySelectorAll('[data-chapter]').forEach((button) => { button.hidden = !button.textContent.includes(query); if (!button.hidden) matches++; });
+          notice(matches ? '已筛选示例章节，共 ' + matches + ' 章。' : '没有找到章节；清除搜索可恢复目录。');
+        } else pageController?.filter(currentView,query);
+      };
+      $('search').addEventListener('input',(event) => { if (!event.isComposing) filterCurrentView(); });
+      $('search').addEventListener('compositionend',filterCurrentView);
+      const resetSearch = (query) => { $('search').value = query; filterCurrentView(); };
+      const clearSearch = () => { resetSearch(''); $('search').focus(); };
+      $('clear-search').addEventListener('click',clearSearch); $('empty-clear').addEventListener('click',clearSearch);
+      document.addEventListener('keydown',(event) => { if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k' && !event.isComposing) { if (!$('search').closest('label').hidden) { event.preventDefault(); $('search').focus(); } } });
+      const writingWindow = $('writing-window');
+      let focusPaneState = null;
+      const setPane = (pane, open) => {
+        $(pane === 'directory' ? 'directory-pane' : 'assistant-pane').hidden = !open;
+        writingWindow.classList.toggle(pane + '-closed', !open);
+        $('toggle-' + pane).setAttribute('aria-expanded', String(open));
+        growEditor();
+      };
+      ['directory','assistant'].forEach((pane) => $('toggle-' + pane).addEventListener('click', () => {
+        const open = $('toggle-' + pane).getAttribute('aria-expanded') !== 'true';
+        setPane(pane, open);
+        if (stage.classList.contains('focus')) focusPaneState[pane] = open;
+      }));
+      $('focus-mode').addEventListener('click',() => {
+        const focus = stage.classList.toggle('focus');
+        if (focus) {
+          focusPaneState = { directory: !$('directory-pane').hidden, assistant: !$('assistant-pane').hidden };
+          setPane('directory',false); setPane('assistant',false);
+        } else {
+          setPane('directory',focusPaneState.directory); setPane('assistant',focusPaneState.assistant);
+          focusPaneState = null;
+        }
+        $('focus-mode').setAttribute('aria-pressed',String(focus));
+        $('focus-mode').querySelector('span').textContent = focus ? '退出专注' : '专注写作';
+        growEditor();
+        notice(focus ? '专注模式：同一扇写作窗口展开正文，可用目录与辅助按钮重新打开侧栏。' : '已恢复进入专注前的面板状态。');
+      });
+      const chapters = {
+        1: { title: '小村少年', paragraphs: ['天刚亮，小村的炊烟已经升起。林逸坐在门槛上，望着山那边逐渐变亮的天空。','那座山，他看过无数次，却从未想过有一天会离开这里，走进山后更广阔的世界。','父亲将柴刀搁在墙边，问他昨晚睡得好不好。他答应了一声，目光却仍停在山上。'] },
+        2: { title: '远行', paragraphs: ['村口的老槐树下，送行的人渐渐散去。林逸把包袱背在肩上，踏上那条走过无数次的土路。','这一次，他没有在河湾处转身。','苏浅语站在桥的另一头。她没有像往常一样笑，只向他递来一张地图：“路上用得着。”'] },
+        3: { title: '山门之外', paragraphs: $('chapter-input').value.split(/\n\n/) },
+        4: { title: '试炼', paragraphs: [] }
+      };
+      let currentChapterId = '3';
+      const countText = (text) => Array.from(text.replace(/\s/g,'')).length;
+      const growEditor = () => { const input = $('chapter-input'); input.style.height = 'auto'; input.style.height = Math.max(390,input.scrollHeight) + 'px'; };
+      const updateCount = () => { const count = countText($('chapter-input').value); $('preview-word-count').textContent = count + ' 字'; $('goal-current').textContent = count + ' 字'; $('goal-progress').value = Math.min(count,3000); const active = document.querySelector('[data-chapter="' + currentChapterId + '"]'); const chapterNames = {1:'第一章',2:'第二章',3:'第三章',4:'第四章'}; active.firstChild.textContent = chapterNames[currentChapterId] + '　' + (chapters[currentChapterId].title || '未命名章节'); $('window-chapter-name').textContent = chapterNames[currentChapterId] + ' · ' + (chapters[currentChapterId].title || '未命名章节'); active.querySelector('span').textContent = '示例 · ' + count + ' 字'; growEditor(); };
+      const rememberDraft = () => { chapters[currentChapterId].paragraphs = $('chapter-input').value.split(/\n\n/); chapters[currentChapterId].title = $('chapter-title').value; $('preview-edit-state').textContent = '本页试写已保留 · 刷新后恢复示例'; updateCount(); };
+      $('chapter-input').addEventListener('input',(event) => { if (!event.isComposing) rememberDraft(); });
+      $('chapter-input').addEventListener('compositionend',rememberDraft);
+      $('chapter-title').addEventListener('input',(event) => { if (!event.isComposing) rememberDraft(); });
+      $('chapter-title').addEventListener('compositionend',rememberDraft);
+      document.querySelectorAll('[data-chapter]').forEach((button) => { button.querySelector('span').textContent = '示例 · ' + countText(chapters[button.dataset.chapter].paragraphs.join('\n\n')) + ' 字'; button.addEventListener('click',() => { rememberDraft(); currentChapterId = button.dataset.chapter; const chapter = chapters[currentChapterId]; $('chapter-title').value = chapter.title; $('chapter-eyebrow').textContent = '第一卷 / 第' + currentChapterId + '章'; $('chapter-input').value = chapter.paragraphs.join('\n\n'); document.querySelectorAll('[data-chapter]').forEach((item) => item.setAttribute('aria-pressed',String(item === button))); applyType(); updateCount(); notice('已切换到示例章节「' + chapter.title + '」。本页试写内容保留，刷新后恢复示例。'); }); });
+      let fontSize = 18; let bold = false; let italic = false; let serif = false;
+      const applyType = () => { const input = $('chapter-input'); input.style.fontSize = fontSize + 'px'; input.style.fontWeight = bold ? '600' : '400'; input.style.fontStyle = italic ? 'italic' : 'normal'; input.style.fontFamily = serif ? 'var(--serif)' : 'var(--sans)'; $('reading-size').textContent = fontSize + ' px · 1.95 行距'; growEditor(); };
+      $('font-family').addEventListener('click',() => { serif = !serif; $('font-family').textContent = serif ? '宋体正文 ⇄' : '黑体正文 ⇄'; $('font-family').setAttribute('aria-label',serif ? '切换正文为黑体' : '切换正文为宋体'); applyType(); });
+      $('font-size').addEventListener('click',() => { fontSize = fontSize === 20 ? 16 : fontSize + 2; applyType(); });
+      $('bold-demo').addEventListener('click',() => { bold = !bold; $('bold-demo').setAttribute('aria-pressed',String(bold)); applyType(); });
+      $('italic-demo').addEventListener('click',() => { italic = !italic; $('italic-demo').setAttribute('aria-pressed',String(italic)); applyType(); });
+      document.querySelectorAll('[data-inspector]').forEach((button) => button.addEventListener('click',() => { document.querySelectorAll('[data-inspector]').forEach((item) => item.setAttribute('aria-pressed',String(item === button))); ['reference','outline','ai'].forEach((key) => $(key + '-panel').hidden = key !== button.dataset.inspector); }));
+      const openDialog = (trigger,title,label,value = '',onConfirm = null) => { lastTrigger = trigger; pendingDialogAction = onConfirm; $('dialog-title').textContent = title; $('demo-label').textContent = label; $('demo-name').value = value; $('demo-error').textContent = ''; $('demo-name').removeAttribute('aria-invalid'); $('demo-dialog').showModal(); $('demo-name').focus(); };
+      $('cancel-dialog').addEventListener('click',() => $('demo-dialog').close());
+      $('demo-dialog').addEventListener('close',() => { pendingDialogAction = null; lastTrigger?.focus(); });
+      $('demo-form').addEventListener('submit',(event) => { event.preventDefault(); const value = $('demo-name').value.trim(); if (!value) { $('demo-error').textContent = '请先填写' + $('demo-label').textContent + '。'; $('demo-name').setAttribute('aria-invalid','true'); $('demo-name').focus(); return; } pendingDialogAction?.(value); $('demo-dialog').close(); notice('已预览确认反馈：「' + value + '」。本页修改刷新后恢复，没有写入真实作品。'); });
+      $('import-demo').addEventListener('click',() => notice('导入入口将沿用现有导入流程，并统一为本套浅色弹窗。此预览不读取文件。'));
+      pageController = window.createPreviewPages({ notice, openDialog, resetSearch });
+      bookController = window.createPreviewBooks({ switchView, notice, filterBooks, onPrimaryChanged: () => switchView(currentView) });
+      const initialView = new URLSearchParams(location.search).get('view');
+      switchView(labels[initialView] ? initialView : 'home');
+      updateCount();
+      window.addEventListener('resize',growEditor);
+    })();
+  </script>
+</body>
+</html>

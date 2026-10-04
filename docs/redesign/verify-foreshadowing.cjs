@@ -1,0 +1,13 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const ctx={window:{}};vm.createContext(ctx);for(const f of ['preview-chapter-references.js','preview-ai.js'])vm.runInContext(fs.readFileSync(__dirname+'/'+f,'utf8'),ctx);
+const transition=ctx.window.previewForeshadowingTransition;
+const cards=[{id:'new',title:'旧锁',kind:'未埋设',summary:'锁上的纹路',fields:[]},{id:'old',title:'密信',kind:'待回收',summary:'谁寄的信',fields:[['回收条件','找到寄信人']]},{id:'closed',title:'钥匙',kind:'已回收',summary:'已查明',fields:[]}];
+const before=JSON.stringify(cards);
+const planted=transition(cards,[{id:'new',action:'埋设'}],3);assert.equal(planted[0].kind,'待回收');assert.ok(planted[0].fields[0][1].includes('第3章'));
+const recovered=transition(cards,[{id:'old',action:'回收'}],8);assert.equal(recovered[0].kind,'已回收');assert.equal(recovered[0].fields[0][1],'找到寄信人');
+assert.equal(transition(cards,[{id:'old',action:'推进'}],4)[0].kind,'推进中');assert.equal(JSON.stringify(cards),before);
+for(const choice of [{id:'new',action:'回收'},{id:'new',action:'推进'},{id:'old',action:'埋设'},{id:'closed',action:'回收'},{id:'missing',action:'推进'}])assert.throws(()=>transition(cards,[choice],3));
+const refs=ctx.window.previewResolveChapterReferences({people:[],world:[],foreshadowing:[{id:'old',action:'回收'}]},{people:[],world:[],foreshadowing:cards});assert.equal(refs.foreshadowing.length,1);assert.equal(refs.foreshadowing[0].action,'回收');
+const missing=ctx.window.previewResolveChapterReferences({people:[],world:[],foreshadowing:[{id:'gone',action:'回收'}]},{people:[],world:[],foreshadowing:cards});assert.equal(missing.missing[0],'gone');
+const result=ctx.window.buildPreviewAIResults('full',{}, {chapterSelection:refs,chapterOutline:{summary:'找到寄信人'}})[0].summary;for(const text of ['回收：密信','谁寄的信','回收条件：找到寄信人'])assert.ok(result.includes(text));
+console.log(JSON.stringify({status:'PASS',assertions:17,scope:'foreshadowing-selection-state-transitions-and-source-input'}));

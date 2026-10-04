@@ -1,0 +1,21 @@
+html.desktop-frame{height:100%;overflow:hidden;background:#e1e8f3;border-radius:24px;}
+.desktop-frame body{height:100%;overflow:hidden;border-radius:24px;box-shadow:inset 0 0 0 1px rgba(220,230,247,.85);}
+.desktop-frame .desktop-titlebar{height:64px;box-sizing:border-box;padding:10px 22px;flex-wrap:nowrap;gap:20px;-webkit-app-region:drag;user-select:none;background:linear-gradient(110deg,rgba(234,215,238,.96),rgba(220,231,247,.97) 52%,rgba(209,231,233,.96));border-bottom:1px solid rgba(117,137,174,.16);position:relative;z-index:10;}
+.desktop-titlebar .review-label{flex:1;min-width:0;gap:14px;}
+.desktop-titlebar .review-label strong{font-size:16px;letter-spacing:.04em;}
+.desktop-titlebar .review-label span{font-size:12px;}
+.desktop-titlebar button,.desktop-titlebar input,.desktop-titlebar label,.desktop-titlebar a{-webkit-app-region:no-drag;}
+.desktop-titlebar .setting[hidden]{display:none;}
+.desktop-titlebar .segmented{background:rgba(220,227,240,.48);border:1px solid rgba(220,230,247,.9);}
+.window-controls{display:flex;align-items:center;gap:7px;flex:1;justify-content:flex-end;-webkit-app-region:no-drag;}
+.window-controls button{font:inherit;font-size:12px;font-weight:600;color:var(--ink,#20324f);background:rgba(220,230,247,.72);border:1px solid rgba(180,194,217,.46);border-radius:13px;padding:0 14px;min-height:34px;cursor:pointer;box-shadow:0 2px 6px rgba(42,63,96,.045);transition:background .16s,box-shadow .16s;}
+.window-controls button:hover{background:#dce6f7;box-shadow:0 3px 10px rgba(42,63,96,.10);}
+.window-controls button:active{background:#e9edf7;}
+.window-controls button:focus-visible{outline:2px solid #4264df;outline-offset:2px;}
+.window-controls [data-window-action=close]{color:#a04460;background:rgba(255,242,246,.82);}
+.window-controls [data-window-action=close]:hover{background:#fbe0e8;}
+.desktop-frame .stage{height:calc(100% - 64px);min-height:0;box-sizing:border-box;overflow:auto;overscroll-behavior:contain;}
+.desktop-frame.window-expanded,.desktop-frame.window-expanded body{border-radius:0;}
+.window-inactive .desktop-titlebar .review-label{opacity:.65;}
+@media(max-width:1100px){.desktop-titlebar .review-label span{display:none;}.desktop-frame .desktop-titlebar{padding-inline:18px;gap:12px;}.window-controls button{padding-inline:11px;}}
+@media(prefers-reduced-motion:reduce){.window-controls button{transition:none;}}

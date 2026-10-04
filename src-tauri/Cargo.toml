@@ -1,0 +1,37 @@
+[package]
+name = "xiezuotai"
+version = "0.1.0"
+description = "A Tauri App"
+authors = ["you"]
+license = ""
+repository = ""
+edition = "2021"
+rust-version = "1.77.2"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[lib]
+name = "app_lib"
+crate-type = ["staticlib", "cdylib", "rlib"]
+
+[build-dependencies]
+tauri-build = { version = "2.6.3", features = [] }
+
+[dependencies]
+serde_json = "1.0"
+serde = { version = "1.0", features = ["derive"] }
+log = "0.4"
+tauri = { version = "2.11.6", features = ["tray-icon", "devtools"] }
+tauri-plugin-log = "2"
+
+# 工作区能力：store 落盘偏好 / dialog 选目录 / fs 读写工作区 / persisted-scope 持久化运行时授权的目录
+# ⚠️ 注册顺序有硬约束：store → dialog → fs → persisted-scope（fs 必须在 persisted-scope 之前）
+tauri-plugin-fs = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-store = "2"
+tauri-plugin-persisted-scope = "2"
+
+# 不直接使用：仅为 indexmap 1.9 打开 `std` feature。本机 autocfg 探针失败会使其编成 no_std 版
+# （IndexMap 无默认 S），导致 schemars 0.8.22 的 `Map<K,V>` 别名报 E0107。
+indexmap = { version = "1.9", features = ["std"] }
+tauri-plugin-single-instance = "2.4.5"

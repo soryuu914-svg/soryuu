@@ -1,0 +1,2 @@
+const test=require('node:test'),assert=require('node:assert/strict');
+test('page navigation query is accepted, other files and remote documents are rejected',()=>{const {sameDocument}=require('../security.cjs');const entry='file:///D:/writing/index.html';assert.equal(sameDocument(entry+'?view=outline&book=a',entry),true);assert.equal(sameDocument('file:///D:/writing/other.html',entry),false);assert.equal(sameDocument('https://example.com/index.html',entry),false);assert.equal(sameDocument('invalid',entry),false);});

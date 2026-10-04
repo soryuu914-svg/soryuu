@@ -1,0 +1,37 @@
+{
+  "scope": "current interactive preview only",
+  "desktopPages": 11,
+  "narrowWidth": 390,
+  "narrowPages": 7,
+  "horizontalOverflow": false,
+  "buttonIconsRemaining": 0,
+  "normalButtonRadius": "12px",
+  "normalButtonFont": "13px",
+  "dialogsChecked": [
+    "作品信息编辑",
+    "灵感内容编辑",
+    "人物卡创建",
+    "AI整章生成"
+  ],
+  "behaviourChecks": [
+    "人物姓名为空：就地错误并保持弹窗",
+    "AI网络失败：条件保留且未采用",
+    "关闭与取消正常返回",
+    "窄屏灵感弹窗按钮完整可见"
+  ],
+  "staticAudit": {
+    "exit": 2,
+    "summary": {
+      "errors": 30,
+      "total": 30,
+      "unresolved": 16,
+      "violations": 14,
+      "warnings": 0
+    },
+    "limitation": "扫描含正式源码和历史快照；不能据此宣称全项目零告警。按钮聚焦、禁用、错误和原生弹窗已在当前预览实际验证。"
+  },
+  "screenshots": [
+    "beautify-v35-home.png",
+    "beautify-v35-dialog.png"
+  ]
+}
