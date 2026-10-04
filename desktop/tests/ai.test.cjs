@@ -77,7 +77,7 @@ test('cross-work format repair is bounded and still checks every corrected sourc
  const result=await service.generate({requestId:'repair-style',operation:'stylePropose',values,context:{}});
  assert.deepEqual(result[0].claims[0].evidence,claim.evidence);
  assert.equal(calls.length,2);assert.ok(calls[1].body.messages.some(m=>m.role==='system'&&/纠正一次/.test(m.content)));
- await assert.rejects(service.generate({requestId:'still-invalid-style',operation:'stylePropose',values,context:{}}),/精确引用/);
+ await assert.rejects(service.generate({requestId:'still-invalid-style',operation:'stylePropose',values,context:{}}),/精确引用.*改写的句子/);
  assert.equal(calls.length,4);
 });
 

@@ -22,7 +22,7 @@ const DIRECTIONS = {
   prompt:'按题材和练习方向产生可用约300字完成的练习题目，不写答案。',
   practice:'独立分析本篇原文的句式、用词、情绪表达、叙事习惯、对话特点。不要推断AI来源或写作质量。结合按范围筛选的作者纠正，但新原文优先；没有证据的维度明说无法判断。额外返回claims数组，每项{id,label,dimension,definition,evidence:[精确原句]}，最多8项。id为简短稳定的英文特征标识。',
   style:'只根据作者自己的有来源练习与人工核对提出文风候选。单篇不能证明稳定习惯，不把外部拆书写成作者个人文风，不宣称已微调或准确率。',
-  stylePropose:'仅用训练样本提炼跨样本表达习惯，不能读取不存在的留出文本。返回一个候选，额外claims数组，每项{id,label,dimension,definition,evidence:[精确原句]}，最多6项。只描述表达手法，不描述剧情内容或题材喜好，判断必须有至少两篇训练作品的依据；没有支持可返回空claims。输出结构必须是[{"title":"观察报告","summary":"范围说明","fields":[],"claims":[{"id":"简短英文标识","label":"观察名称","dimension":"维度","definition":"限定解释","evidence":["原文连续子串"]}]}]。claims在唯一候选内部，不另包candidate或candidates。每条evidence最多12段，直接复制原文，不得缩写或改字。',
+  stylePropose:'仅用训练样本提炼跨样本表达习惯，不能读取不存在的留出文本。返回一个候选，额外claims数组，每项{id,label,dimension,definition,evidence:[精确原句]}，最多6项。只描述表达手法，不描述剧情内容或题材喜好，判断必须有至少两篇训练作品的依据；没有支持可返回空claims。输出结构必须是[{"title":"观察报告","summary":"范围说明","fields":[],"claims":[{"id":"简短英文标识","label":"观察名称","dimension":"维度","definition":"限定解释","evidence":["原文连续子串"]}]}]。claims在唯一候选内部，不另包candidate或candidates。每条evidence优先只选2至3段最有代表性的原句，来自至少两篇不同作品，上限最多12段，直接复制原文，不得缩写或改字。',
   styleValidate:'只对留出的原文核对给定的文风观察；看不到训练原文及留出篇的旧分析和作者反馈。返回一个候选，额外verdicts数组，严格遵守每项evidence最多4段，选择最有代表性的精确原句，每项{id,status:"supported"|"unsupported"|"uncertain",evidence:[精确原句],reason}，覆盖每个给定观察。缺乏可观察场景用uncertain，反例用unsupported。不要把同一题材的剧情用词认作作者文风。输出结构必须是[{"title":"验证报告","summary":"核对说明","fields":[],"verdicts":[{"id":"给定观察的id","status":"supported","evidence":["留出原文连续子串"],"reason":"核对理由"}]}]。verdicts在唯一候选内部，不另包candidate或candidates。证据只能从values.source直接复制，不得缩写或改字。',
   passage:'根据本章正文和所选维度，每个维度输出一条可直接收录的写作技巧。title为具体方法名，summary说明如何运用，fields包含分析维度、执行步骤、适用场景、不适用情况、原文依据（精确原句）。人物塑造提炼动机、选择与冲突的方法，不输出人物卡；不复写原书剧情。无充分证据时明确标为待验证，不编造判断。',
   bookAnalysis:'根据所提供章节和所选维度，每个维度输出一条可直接收录的写作技巧。title为具体方法名，summary说明如何运用，fields包含分析维度、执行步骤、适用场景、不适用情况、原文依据（精确原句）、分析覆盖范围。人物塑造提炼方法，不输出人物卡。只判断已读取章节，不概括未读章节；证据不足明确标为待验证。',
@@ -91,7 +91,7 @@ function validateClaims(raw,source,maximumEvidence=4) {
     seen.add(claim.id);
     if(!Array.isArray(claim.evidence)||!claim.evidence.length) fail('AI 文风观察缺少原文依据。');
     if(claim.evidence.length>maximumEvidence)fail('每条文风观察最多保留'+maximumEvidence+'段原文依据。');
-    const evidence=claim.evidence.map(quote=>{text(quote,'依据',2000);if(!source.includes(quote)) fail('AI 文风依据不是正文中的精确引用。');return quote;});
+    const evidence=claim.evidence.map(quote=>{text(quote,'依据',2000);if(!source.includes(quote)) fail('AI 文风依据不是正文中的精确引用：'+quote.slice(0,160));return quote;});
     return {id:claim.id,label:text(claim.label,'观察',1000),dimension:text(claim.dimension,'维度',100),definition:text(claim.definition,'限定范围',2000),evidence};
   });
 }
@@ -154,7 +154,7 @@ function validateCandidates(raw,request,expected) {
     }
     if(operation==='styleValidate') {
       if(!Array.isArray(value.verdicts)||value.verdicts.length!==(values.claims || []).length)fail('文风验证未逐项核对所有观察。');const seen=new Set();
-      result.verdicts=value.verdicts.map(item=>{if(!values.claims.some(c=>c.id===item.id)||seen.has(item.id)||!['supported','unsupported','uncertain'].includes(item.status))fail('文风验证格式无效。');seen.add(item.id);if(!Array.isArray(item.evidence)|| item.status==='supported'&&!item.evidence.length)fail('文风验证缺少原文依据。');if(item.evidence.length>4)fail('每条文风验证最多保留4段原文依据。');const evidence=item.evidence.map(q=>{text(q,'验证依据',2000);if(!String(values.source).includes(q))fail('文风验证依据不在留出正文里。');return q;});return {id:item.id,status:item.status,evidence,reason:text(item.reason,'验证原因',3000)};});
+      result.verdicts=value.verdicts.map(item=>{if(!values.claims.some(c=>c.id===item.id)||seen.has(item.id)||!['supported','unsupported','uncertain'].includes(item.status))fail('文风验证格式无效。');seen.add(item.id);if(!Array.isArray(item.evidence)|| item.status==='supported'&&!item.evidence.length)fail('文风验证缺少原文依据。');if(item.evidence.length>4)fail('每条文风验证最多保留4段原文依据。');const evidence=item.evidence.map(q=>{text(q,'验证依据',2000);if(!String(values.source).includes(q))fail('文风验证依据不在留出正文里：'+q.slice(0,160));return q;});return {id:item.id,status:item.status,evidence,reason:text(item.reason,'验证原因',3000)};});
     }
     if(operation==='progression') {
       if(!Array.isArray(value.changes)||value.changes.length>100) fail('AI 状态变化格式无效。');
